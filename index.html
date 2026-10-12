@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mobile Banking Fees BD — মোবাইল ব্যাংকিং ফি ক্যালকুলেটর</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-icon">💸</span>
+    <div>
+      <h1 data-i18n="appTitle">Mobile Banking Fees BD</h1>
+      <p class="tagline" data-i18n="appTagline">Compare cash-out &amp; send-money charges for bKash, Nagad, Rocket, upay</p>
+    </div>
+  </div>
+  <div class="lang-toggle" role="group" aria-label="Language / ভাষা">
+    <button id="lang-en" type="button" aria-pressed="true">EN</button>
+    <button id="lang-bn" type="button" aria-pressed="false">বাংলা</button>
+  </div>
+</header>
+
+<div class="disclaimer" role="note">
+  <strong data-i18n="disclaimerTitle">⚠️ Rates are editable defaults</strong>
+  <span data-i18n="disclaimerBody">Fee figures are typical published rates, not guaranteed live. Rates change frequently — verify in the provider's official app before transacting.</span>
+</div>
+
+<nav class="tabs" role="tablist" aria-label="Sections">
+  <button class="tab active" role="tab" data-tab="cashout" data-i18n="tabCashout">Cash-out</button>
+  <button class="tab" role="tab" data-tab="send" data-i18n="tabSend">Send money</button>
+  <button class="tab" role="tab" data-tab="compare" data-i18n="tabCompare">Compare</button>
+  <button class="tab" role="tab" data-tab="rates" data-i18n="tabRates">Rates</button>
+  <button class="tab" role="tab" data-tab="history" data-i18n="tabHistory">History <span id="history-badge" class="badge" hidden>0</span></button>
+</nav>
+
+<main>
+  <!-- CASH-OUT -->
+  <section id="panel-cashout" class="panel active" role="tabpanel">
+    <form id="cashout-form" novalidate>
+      <div class="field">
+        <label for="co-provider" data-i18n="provider">Provider</label>
+        <select id="co-provider"></select>
+      </div>
+      <div class="field">
+        <label for="co-channel" data-i18n="channel">Channel</label>
+        <select id="co-channel"></select>
+        <p class="hint" id="co-channel-note"></p>
+      </div>
+      <div class="field">
+        <label for="co-amount" data-i18n="amount">Amount (৳)</label>
+        <input id="co-amount" type="number" inputmode="decimal" min="1" step="any" data-i18n-ph="amountPh" placeholder="e.g. 10000">
+        <p class="error" id="err-co-amount"></p>
+      </div>
+      <button type="submit" class="primary" data-i18n="calculate">Calculate</button>
+    </form>
+    <div id="co-result" class="result" hidden>
+      <div class="result-row"><span data-i18n="rateApplied">Rate applied</span><strong data-result="co-rate"></strong></div>
+      <div class="result-row"><span data-i18n="fee">Fee</span><strong data-result="co-fee"></strong></div>
+      <div class="result-row total"><span data-i18n="netReceived">You receive</span><strong data-result="co-net"></strong></div>
+    </div>
+  </section>
+
+  <!-- SEND MONEY -->
+  <section id="panel-send" class="panel" role="tabpanel" hidden>
+    <form id="send-form" novalidate>
+      <div class="field">
+        <label for="sm-provider" data-i18n="provider">Provider</label>
+        <select id="sm-provider"></select>
+      </div>
+      <div class="field">
+        <label for="sm-amount" data-i18n="amount">Amount (৳)</label>
+        <input id="sm-amount" type="number" inputmode="decimal" min="1" step="any" data-i18n-ph="amountPh" placeholder="e.g. 5000">
+        <p class="error" id="err-sm-amount"></p>
+      </div>
+      <button type="submit" class="primary" data-i18n="calculate">Calculate</button>
+    </form>
+    <div id="sm-result" class="result" hidden>
+      <div class="result-row"><span data-i18n="slabApplied">Charge rule applied</span><strong data-result="sm-rule"></strong></div>
+      <div class="result-row"><span data-i18n="fee">Fee</span><strong data-result="sm-fee"></strong></div>
+      <div class="result-row total"><span data-i18n="receiverGets">Receiver gets</span><strong data-result="sm-net"></strong></div>
+      <p class="hint" id="sm-note"></p>
+    </div>
+  </section>
+
+  <!-- COMPARE -->
+  <section id="panel-compare" class="panel" role="tabpanel" hidden>
+    <form id="compare-form" novalidate>
+      <div class="field">
+        <label for="cmp-amount" data-i18n="compareAmount">Cash-out amount (৳)</label>
+        <input id="cmp-amount" type="number" inputmode="decimal" min="1" step="any" data-i18n-ph="amountPh" placeholder="e.g. 10000">
+        <p class="error" id="err-cmp-amount"></p>
+      </div>
+      <button type="submit" class="primary" data-i18n="compareNow">Compare</button>
+    </form>
+    <div id="compare-empty" class="empty">
+      <p data-i18n="compareEmpty">Enter an amount above to compare cash-out fees across providers.</p>
+    </div>
+    <div id="compare-table-wrap" class="table-wrap" hidden>
+      <table id="compare-table">
+        <thead>
+          <tr>
+            <th data-i18n="provider">Provider</th>
+            <th data-i18n="channel">Channel</th>
+            <th data-i18n="ratePer1000">Rate / ৳1000</th>
+            <th data-i18n="fee">Fee</th>
+            <th data-i18n="netReceived">You receive</th>
+          </tr>
+        </thead>
+        <tbody id="compare-body"></tbody>
+      </table>
+      <p class="hint" data-i18n="compareHint">Cheapest provider highlighted. Each provider is shown at its cheapest available channel.</p>
+    </div>
+  </section>
+
+  <!-- RATES -->
+  <section id="panel-rates" class="panel" role="tabpanel" hidden>
+    <p class="hint" data-i18n="ratesIntro">Every default below is editable. Changes are saved on your device only.</p>
+    <div id="rates-tables"></div>
+    <div class="row">
+      <button id="rates-save" type="button" class="primary" data-i18n="saveRates">Save changes</button>
+      <button id="rates-reset" type="button" class="ghost" data-i18n="resetDefaults">Reset to defaults</button>
+      <span id="rates-status" class="status" role="status"></span>
+    </div>
+  </section>
+
+  <!-- HISTORY -->
+  <section id="panel-history" class="panel" role="tabpanel" hidden>
+    <div class="row">
+      <button id="hist-export" type="button" class="ghost" data-i18n="exportJson">Export JSON</button>
+      <label class="ghost file-label" for="hist-import" data-i18n="importJson">Import JSON</label>
+      <input id="hist-import" type="file" accept="application/json" hidden>
+      <button id="hist-clear" type="button" class="danger" data-i18n="clearHistory">Clear</button>
+    </div>
+    <p class="error" id="hist-import-error"></p>
+    <div id="history-empty" class="empty">
+      <p data-i18n="historyEmpty">No calculations yet. Use the Cash-out or Send money tabs.</p>
+    </div>
+    <ul id="history-list" class="history"></ul>
+  </section>
+</main>
+
+<footer>
+  <p data-i18n="footerNote">All fee figures are editable defaults based on typically published rates — always verify in the provider's official app. No data leaves your device.</p>
+</footer>
+
+<script src="rates.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
